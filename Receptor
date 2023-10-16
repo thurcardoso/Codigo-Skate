@@ -1,0 +1,46 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+RF24 radio(9, 10); // Pinos CE e CSN do módulo NRF24L01
+const byte address[6] = "00001";
+
+const int pwmAceleracaoPin = 3; // Pino PWM para aceleração
+const int pwmFrenagemPin = 5; // Pino PWM para frenagem
+
+void setup() {
+  radio.begin();
+  radio.openReadingPipe(1, address);
+  radio.setPALevel(RF24_PA_LOW);
+  radio.startListening();
+  pinMode(pwmAceleracaoPin, OUTPUT);
+  pinMode(pwmFrenagemPin, OUTPUT);
+}
+
+void loop() {
+  if (radio.available()) {
+    int potValue;
+    radio.read(&potValue, sizeof(potValue));
+
+    // Mapeie o valor do potenciômetro para o intervalo -100 a 100
+    int pwmValue = map(potValue, 0, 1023, -50, 100)*2;
+
+    // Controle das saídas PWM para aceleração e frenagem
+    if (pwmValue > 0) {
+      analogWrite(pwmAceleracaoPin, pwmValue);
+      analogWrite(pwmFrenagemPin, 0);
+    } else if (pwmValue < 0) {
+      analogWrite(pwmAceleracaoPin, 0);
+      analogWrite(pwmFrenagemPin, abs(pwmValue));
+    } else {
+      // Quando o potenciômetro estiver no centro, pare
+      analogWrite(pwmAceleracaoPin, 0);
+      analogWrite(pwmFrenagemPin, 0);
+    }
+  
+      //Ler pelo monitor serial o que esta sendo enviado
+    Serial.begin(9600);
+    Serial.println(pwmValue);
+  }
+
+}
