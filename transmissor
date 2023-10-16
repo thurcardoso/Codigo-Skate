@@ -1,0 +1,35 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <U8g2lib.h>
+
+RF24 radio(9, 10); // Pinos CE e CSN do módulo NRF24L01
+const byte address[6] = "00001";
+
+const int potenciometroPin = A3; // Pino analógico conectado ao potenciômetro
+
+U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, 4, 5, U8X8_PIN_NONE); // Inicializar o display OLED
+
+void setup() {
+  radio.begin();
+  radio.openWritingPipe(address);
+  radio.setPALevel(RF24_PA_LOW);
+  pinMode(potenciometroPin, INPUT);  
+  u8g2.begin();
+  }
+
+void loop() {
+  int potValue = analogRead(potenciometroPin);
+  radio.write(&potValue, sizeof(potValue));
+  delay(100); // Ajuste conforme necessário
+        //Ler pelo monitor serial o que esta sendo enviado
+    Serial.begin(9600);
+    Serial.println(potValue);
+
+  // Exibir o valor do potenciômetro no display OLED
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_ncenB14_tr);
+  u8g2.drawStr(50, 20, "Valor do Pot: " + int(potValue));
+  u8g2.sendBuffer();
+}
+
